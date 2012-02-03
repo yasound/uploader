@@ -1,4 +1,5 @@
 from mutagen.mp3 import MP3
+import mutagen
 import db
 import echogen
 import json
@@ -17,12 +18,12 @@ logging.basicConfig()
 log = logging.getLogger("uploader")
 log.setLevel(logging.INFO)
 
-def get_mp3_infos(filename):
-    log.info("looking for mp3 infos about %s" % (filename))
+def get_file_infos(filename):
+    log.info("looking for file infos about %s" % (filename))
     is_valid = True
     f = None
     try:
-        f = MP3(filename)
+        f = mutagen.File(filename, easy=true)
     except:
         is_valid=False
         pass
@@ -30,7 +31,7 @@ def get_mp3_infos(filename):
     artist = None
     album = None
     bitrate = 0
-    
+
     if f and f.tags:
         if 'TIT2' in f.tags:
             title = f.tags.get('TIT2')[0]
@@ -65,11 +66,11 @@ def get_mp3_infos(filename):
         if 'code' in echo_data[0]:
             info['fingerprint'] = echo_data[0]['code']
         info['echonest_id'] = echogen.get_echonest_id(echo_data[0])
-        
+
     lastfm_data = lastfm.run_fp(filename)
     if lastfm_data:
         info['lastfm_id'] = lastfm.get_lastfm_id(lastfm_data)
-        
+
     return info
 
 def find_fuzzy(infos):
@@ -86,24 +87,24 @@ def find_fuzzy(infos):
     data = json.loads(result)
     return data['db_id']
 
-def check_if_new(mp3):
+def check_if_new(file):
     conn = psycopg2.connect(conn_string)
-    infos = get_mp3_infos(mp3)
+    infos = get_file_infos(file)
     if not infos['is_valid']:
-        log.info('%s: invalid file' % (mp3))
+        log.info('%s: invalid file' % (file))
         return False
 
-    log.debug("%s: trying echonest and lastfm" % (mp3))
+    log.debug("%s: trying echonest and lastfm" % (file))
     db_id = db.find_by_echonest_or_lastfm(conn, infos['echonest_id'], infos['lastfm_id'])
     if not db_id:
-        log.info("%s: trying fuzzy" % (mp3))
+        log.info("%s: trying fuzzy" % (file))
         db_id = find_fuzzy(infos)
-    
+
     if not db_id:
-        log.info("%s: no db_id found" % (mp3))
+        log.info("%s: no db_id found" % (file))
         return True
-    
-    log.info('%s: db_id found : %d' % (mp3, db_id))
+
+    log.info('%s: db_id found : %d' % (file, db_id))
     return False
 
 def run(root, file, filename):
@@ -111,8 +112,8 @@ def run(root, file, filename):
         log.info("%s: new file!" % (filename))
         dest = settings.DEST_FOLDER + '/' + file
         shutil.copyfile(filename, dest)
-    
-    
+
+
 def main():
     pool = []
     source_folder = settings.SOURCE_FOLDER
@@ -121,17 +122,16 @@ def main():
     for root, subFolders, files in os.walk(source_folder):
         for file in files:
             filename, extension = os.path.splitext(os.path.join(root,file))
-            if extension == '.mp3':
-                log.info("checking %s" % filename)
-                p = Process(target=run, args=(root, file, filename + extension))
-                pool.append(p)
-                if len(pool) >= settings.POOL_SIZE:
-                    [p.start() for p in pool]
-                    [p.join() for p in pool]
-                    pool = []
+            log.info("checking %s" % filename)
+            p = Process(target=run, args=(root, file, filename + extension))
+            pool.append(p)
+            if len(pool) >= settings.POOL_SIZE:
+                [p.start() for p in pool]
+                [p.join() for p in pool]
+                pool = []
     [p.start() for p in pool]
     [p.join() for p in pool]
 
 if __name__ == "__main__":
     main()
-#    print check_if_new('../data/song.mp3')    
+#    print check_if_new('../data/song.mp3')
