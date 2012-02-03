@@ -8,6 +8,7 @@ import os
 import requests
 import settings
 import shutil
+from multiprocessing import Process
 
 logging.basicConfig()
 log = logging.getLogger("uploader")
@@ -101,7 +102,16 @@ def check_if_new(mp3):
     log.info('db_id found : %d' % db_id)
     return False
 
+def run(root, file, filename):
+    log.info("running!")
+    if check_if_new(os.path.join(root,file)):
+        log.info("new file!")
+        dest = settings.DEST_FOLDER + '/' + file
+        shutil.copyfile(filename, dest)
+    
+    
 def main():
+    pool = []
     source_folder = settings.SOURCE_FOLDER
     log.info("source folder is %s" % (source_folder))
     shutil.copyfile("./upload.sh", settings.DEST_FOLDER + '/upload.sh')
@@ -110,10 +120,14 @@ def main():
             filename, extension = os.path.splitext(os.path.join(root,file))
             if extension == '.mp3':
                 log.info("checking %s" % filename)
-                if check_if_new(os.path.join(root,file)):
-                    log.info("new file!")
-                    dest = settings.DEST_FOLDER + '/' + file
-                    shutil.copyfile(filename + extension, dest)
+                p = Process(target=run, args=(root, file, filename + extension))
+                pool.append(p)
+                if len(pool) > 10:
+                    [p.start() for p in pool]
+                    [p.join() for p in pool]
+                    pool = []
+    [p.start() for p in pool]
+    [p.join() for p in pool]
 
 if __name__ == "__main__":
     main()
