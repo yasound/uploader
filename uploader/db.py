@@ -1,9 +1,6 @@
-import psycopg2
 import hashlib
-conn_string = "host='yasound.com' port='5433' dbname='yasound' user='yaapp' password='N3EDTnz945FSh6D'"
-conn = psycopg2.connect(conn_string)
 
-def get_remote_infos(db_id):
+def get_remote_infos(conn, db_id):
     """
     return informations about song id in yasound database
     """
@@ -19,7 +16,7 @@ def get_remote_infos(db_id):
     }
     return infos
 
-def find_by_fingerprint(fingerprint):
+def find_by_fingerprint(conn, fingerprint):
     if not fingerprint:
         return None
     fingerprint_hash = hashlib.sha1(fingerprint).hexdigest()
@@ -33,11 +30,11 @@ def find_by_fingerprint(fingerprint):
     cursor.close()
     return db_id
 
-def find_by_echonest_or_lastfm(echonest_id, lastfm_id):
+def find_by_echonest_or_lastfm(conn, echonest_id, lastfm_id):
     if not echonest_id:
-        return find_by_lastfm_id(lastfm_id)
+        return find_by_lastfm_id(conn, lastfm_id)
     if not lastfm_id:
-        return find_by_echonest_id(echonest_id)
+        return find_by_echonest_id(conn, echonest_id)
     
     cursor = conn.cursor()
     cursor.execute("SELECT id FROM yasound_song WHERE echonest_id=%s or lastfm_id=%s" , (echonest_id, lastfm_id))
@@ -48,7 +45,7 @@ def find_by_echonest_or_lastfm(echonest_id, lastfm_id):
     cursor.close()
     return db_id
 
-def find_by_echonest_id(echonest_id):
+def find_by_echonest_id(conn, echonest_id):
     if not echonest_id:
         return None
     cursor = conn.cursor()
@@ -60,7 +57,7 @@ def find_by_echonest_id(echonest_id):
     cursor.close()
     return db_id
 
-def find_by_lastfm_id(lastfm_id):
+def find_by_lastfm_id(conn, lastfm_id):
     if not lastfm_id:
         return None
     cursor = conn.cursor()

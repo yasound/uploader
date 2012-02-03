@@ -8,7 +8,10 @@ import os
 import requests
 import settings
 import shutil
+import psycopg2
 from multiprocessing import Process
+
+conn_string = "host='yasound.com' port='5433' dbname='yasound' user='yaapp' password='N3EDTnz945FSh6D'"
 
 logging.basicConfig()
 log = logging.getLogger("uploader")
@@ -84,13 +87,14 @@ def find_fuzzy(infos):
     return data['db_id']
 
 def check_if_new(mp3):
+    conn = psycopg2.connect(conn_string)
     infos = get_mp3_infos(mp3)
     if not infos['is_valid']:
         log.info('invalid file')
         return False
 
     log.debug("trying echonest and lastfm")
-    db_id = db.find_by_echonest_or_lastfm(infos['echonest_id'], infos['lastfm_id'])
+    db_id = db.find_by_echonest_or_lastfm(conn, infos['echonest_id'], infos['lastfm_id'])
     if not db_id:
         log.info("trying fuzzy")
         db_id = find_fuzzy(infos)
@@ -122,7 +126,7 @@ def main():
                 log.info("checking %s" % filename)
                 p = Process(target=run, args=(root, file, filename + extension))
                 pool.append(p)
-                if len(pool) > 10:
+                if len(pool) >= settings.POOL_SIZE:
                     [p.start() for p in pool]
                     [p.join() for p in pool]
                     pool = []

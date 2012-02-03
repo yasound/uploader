@@ -108,12 +108,11 @@ def get_lastfm_id(doc):
     lastfm_id = None
     try:
         data = xml2obj(doc)
+        name = data['tracks'].track[0].name
+        artist = data['tracks'].track[0].artist.name
     except:
         log.info("cannot build document from xml description given by lastfmpclient")
         return lastfm_id
-    
-    name = data['tracks'].track[0].name
-    artist = data['tracks'].track[0].artist.name
     
     params = {
         "method": 'track.getinfo',
