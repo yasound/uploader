@@ -75,7 +75,7 @@ def find_fuzzy(infos):
                'key':settings.FUZZY_KEY
     }
     headers = {'content-type': 'application/json'}
-    r = requests.post('https://dev.yasound.com/yaref/find.json/', data=json.dumps(payload), headers=headers)
+    r = requests.post('https://dev.yasound.com/yaref/find.json/', data=json.dumps(payload), headers=headers, verify=False)
     if not r.status_code == 200:
         return None
     result = r.text
