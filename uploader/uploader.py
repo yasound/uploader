@@ -10,7 +10,8 @@ import requests
 import settings
 import shutil
 import psycopg2
-from multiprocessing import Process
+from multiprocessing import Process, Array
+from multiprocessing import Pool
 
 conn_string = "host='yasound.com' port='5433' dbname='yasound' user='yaapp' password='N3EDTnz945FSh6D'"
 
@@ -23,8 +24,9 @@ def get_file_infos(filename):
     is_valid = True
     f = None
     try:
-        f = mutagen.File(filename, easy=true)
+        f = mutagen.File(filename, easy=True)
     except:
+        log.info('%s: skip' % (filename))
         is_valid=False
         pass
     title = None
@@ -41,10 +43,9 @@ def get_file_infos(filename):
             album = f.tags.get('TALB')[0]
     if f:
         bitrate = f.info.bitrate / 1000
-
-    if bitrate < 192:
-        log.info('%s: bitrate is too low (%d)' % (filename, bitrate))
-        is_valid = False
+        if  (bitrate < 128 and ('audio/mp4' in f._mimes)) or ('audio/x-flac' in f._mimes) or (bitrate < 128 and ('application/ogg' in f._mimes)) or (bitrate < 128 and ('audio/x-wma' in f._mimes)) or (bitrate < 192):
+            log.info('%s: bitrate is too low (%d)' % (filename, bitrate))
+            is_valid = False
     info = {
         'is_valid': is_valid,
         'bitrate': bitrate,
@@ -110,15 +111,15 @@ def check_if_new(file):
 def run(root, file, filename):
     if check_if_new(os.path.join(root,file)):
         log.info("%s: new file!" % (filename))
-        dest = settings.DEST_FOLDER + '/' + file
-        shutil.copyfile(filename, dest)
+        files_output = open(settings.DEST_FILE, 'a')
+        files_output.write("%s\n" % filename)
 
 
 def main():
     pool = []
     source_folder = settings.SOURCE_FOLDER
     log.info("source folder is %s" % (source_folder))
-    shutil.copyfile("./upload.sh", settings.DEST_FOLDER + '/upload.sh')
+
     for root, subFolders, files in os.walk(source_folder):
         for file in files:
             filename, extension = os.path.splitext(os.path.join(root,file))
@@ -129,6 +130,7 @@ def main():
                 [p.start() for p in pool]
                 [p.join() for p in pool]
                 pool = []
+
     [p.start() for p in pool]
     [p.join() for p in pool]
 
