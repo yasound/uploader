@@ -9,7 +9,8 @@ import requests
 import settings
 import shutil
 import psycopg2
-from multiprocessing import Process
+from multiprocessing import Process, Array
+from multiprocessing import Pool
 
 conn_string = "host='yasound.com' port='5433' dbname='yasound' user='yaapp' password='N3EDTnz945FSh6D'"
 
@@ -109,15 +110,15 @@ def check_if_new(mp3):
 def run(root, file, filename):
     if check_if_new(os.path.join(root,file)):
         log.info("%s: new file!" % (filename))
-        dest = settings.DEST_FOLDER + '/' + file
-        shutil.copyfile(filename, dest)
-    
+        files_output = open('./new_songs.txt', 'a')
+        files_output.write("%s\n" % filename)
+
     
 def main():
     pool = []
     source_folder = settings.SOURCE_FOLDER
     log.info("source folder is %s" % (source_folder))
-    shutil.copyfile("./upload.sh", settings.DEST_FOLDER + '/upload.sh')
+    
     for root, subFolders, files in os.walk(source_folder):
         for file in files:
             filename, extension = os.path.splitext(os.path.join(root,file))
@@ -129,9 +130,10 @@ def main():
                     [p.start() for p in pool]
                     [p.join() for p in pool]
                     pool = []
+
     [p.start() for p in pool]
     [p.join() for p in pool]
-
+    
 if __name__ == "__main__":
     main()
 #    print check_if_new('../data/song.mp3')    
