@@ -105,8 +105,13 @@ def run_fp(mp3):
 
 def get_lastfm_id(doc):
     url = 'http://ws.audioscrobbler.com/2.0/'
-
-    data = xml2obj(doc)
+    lastfm_id = None
+    try:
+        data = xml2obj(doc)
+    except:
+        log.info("cannot build document from xml description given by lastfmpclient")
+        return lastfm_id
+    
     name = data['tracks'].track[0].name
     artist = data['tracks'].track[0].artist.name
     
@@ -117,9 +122,13 @@ def get_lastfm_id(doc):
         "track": name
     }
     r = requests.get(url, params=params)
-    result = r.text.encode('utf-8', 'replace')
-    data = xml2obj(result)
-    return data.track.id
+    try:
+        result = r.text.encode('utf-8', 'replace')
+        data = xml2obj(result)
+        lastfm_id = data.track.id
+    except:
+        log.info("cannot parse result from lastfm call")
+    return lastfm_id
 
 
 
