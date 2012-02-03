@@ -10,7 +10,6 @@ def run_echogen(mp3):
     run echoprint-echogen in order to get suitable data to query
     """
     import subprocess as sub
-    log.info("launching echoprint_codegen")
     p = sub.Popen([settings.ECHOPRINT_CODEGEN, mp3, '0', '30'],stdout=sub.PIPE,stderr=sub.PIPE)
     output, errors = p.communicate()
     return json.loads(output)
@@ -19,7 +18,6 @@ def get_echonest_id(echogen_data):
     """
     query echogen server to get echonest id
     """
-    log.info("look for echonest id")
     echonest_id = None
     headers = {'content-type': 'multipart/form-data'}
     data = {
@@ -35,5 +33,4 @@ def get_echonest_id(echogen_data):
         song = songs[0]
         if 'id' in song:
             echonest_id = song['id']
-            log.info("found : %s", echonest_id)
     return echonest_id

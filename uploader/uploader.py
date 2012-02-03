@@ -42,7 +42,7 @@ def get_mp3_infos(filename):
         bitrate = f.info.bitrate / 1000
 
     if bitrate < 192:
-        log.info('bitrate is too low (%d)' % (bitrate))
+        log.info('%s: bitrate is too low (%d)' % (filename, bitrate))
         is_valid = False
     info = {
         'is_valid': is_valid,
@@ -90,26 +90,25 @@ def check_if_new(mp3):
     conn = psycopg2.connect(conn_string)
     infos = get_mp3_infos(mp3)
     if not infos['is_valid']:
-        log.info('invalid file')
+        log.info('%s: invalid file' % (mp3))
         return False
 
-    log.debug("trying echonest and lastfm")
+    log.debug("%s: trying echonest and lastfm" % (mp3))
     db_id = db.find_by_echonest_or_lastfm(conn, infos['echonest_id'], infos['lastfm_id'])
     if not db_id:
-        log.info("trying fuzzy")
+        log.info("%s: trying fuzzy" % (mp3))
         db_id = find_fuzzy(infos)
     
     if not db_id:
-        log.info("no db_id found")
+        log.info("%s: no db_id found" % (mp3))
         return True
     
-    log.info('db_id found : %d' % db_id)
+    log.info('%s: db_id found : %d' % (mp3, db_id))
     return False
 
 def run(root, file, filename):
-    log.info("running!")
     if check_if_new(os.path.join(root,file)):
-        log.info("new file!")
+        log.info("%s: new file!" % (filename))
         dest = settings.DEST_FOLDER + '/' + file
         shutil.copyfile(filename, dest)
     

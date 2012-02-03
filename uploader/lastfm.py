@@ -96,7 +96,6 @@ def run_fp(mp3):
     run lastfmfpclient in order to get suitable data to query
     """
     import subprocess as sub
-    log.info("launching lastfmfpclient")
     p = sub.Popen([settings.LASTFMFPCLIENT, mp3],stdout=sub.PIPE,stderr=sub.PIPE)
     output, errors = p.communicate()
     
