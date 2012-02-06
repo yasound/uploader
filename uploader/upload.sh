@@ -1,2 +1,2 @@
 #!/bin/sh
-../vtenv/bin/python uploader.py --upload
+../vtenv/bin/python uploader.py --upload --convert

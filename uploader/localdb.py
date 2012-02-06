@@ -3,7 +3,6 @@ import settings
 
 def _build_cursor():
     conn = sqlite3.connect(settings.SQLITE_DATABASE)
-    conn.text_factory = str
     cursor = conn.cursor()
     return conn, cursor
 
@@ -17,7 +16,7 @@ def build_schema():
 
 def has_song(song_filename):
     conn, cursor = _build_cursor()
-    res = cursor.execute('select count(*) from songs where filename = ?', (song_filename,))
+    res = cursor.execute(u'select count(*) from songs where filename = ?', (song_filename.decode('utf-8'),))
     count = res.fetchone()[0]
     cursor.close()
     return count > 0
@@ -25,24 +24,24 @@ def has_song(song_filename):
 def insert_song(song_filename, is_new_song=False):
     if has_song(song_filename):
         conn, cursor = _build_cursor()
-        cursor.execute('update songs set is_new_song = ? where filename = ?', (is_new_song, song_filename))
+        cursor.execute(u'update songs set is_new_song = ? where filename = ?', (is_new_song, song_filename.decode('utf-8')))
         conn.commit()
         cursor.close()
         return
     conn, cursor = _build_cursor()
-    cursor.execute('insert into songs  values (NULL, ?, ?)', (song_filename, is_new_song))
+    cursor.execute(u'insert into songs  values (NULL, ?, ?)', (song_filename.decode('utf-8'), is_new_song))
     conn.commit()
     cursor.close()
 
 def mark_song_as_sent(song_filename):
     conn, cursor = _build_cursor()
-    cursor.execute('update songs set is_new_song = ? where filename = ?', (False, song_filename))
+    cursor.execute(u'update songs set is_new_song = ? where filename = ?', (False, song_filename.decode('utf-8')))
     conn.commit()
     cursor.close()
     
 def select_all_songs():
     conn, cursor = _build_cursor()
-    cursor.execute("SELECT filename from songs")
+    cursor.execute(u"SELECT filename from songs")
     songs = []
     for r in cursor:
         songs.append(r[0])
@@ -51,7 +50,7 @@ def select_all_songs():
 
 def select_new_songs():
     conn, cursor = _build_cursor()
-    cursor.execute("SELECT filename from songs where is_new_song = ?", (True,))
+    cursor.execute(u"SELECT filename from songs where is_new_song = ?", (True,))
     songs = []
     for r in cursor:
         songs.append(r[0])
@@ -60,13 +59,13 @@ def select_new_songs():
 
 def delete_song(song_filename):
     conn, cursor = _build_cursor()
-    cursor.execute('delete from songs  where filename = ?', (song_filename,))
+    cursor.execute(u'delete from songs  where filename = ?', (song_filename.decode('utf-8'),))
     conn.commit()
     cursor.close()
     
 def delete_all_songs():
     conn, cursor = _build_cursor()
-    cursor.execute('delete from songs')
+    cursor.execute(u'delete from songs')
     conn.commit()
     cursor.close()
     

@@ -14,6 +14,7 @@ from multiprocessing import Process
 import sys
 import getopt
 import subprocess as sub
+import filetools
 
 
 conn_string = "host='yasound.com' port='5433' dbname='yasound' user='yaapp' password='N3EDTnz945FSh6D'"
@@ -119,6 +120,7 @@ def run(root, file, filename):
     localdb.insert_song(filename, is_new_song=is_new_song)
 
 def check_for_new_songs():
+    log.info("checking for new songs")
     pool = []
     source_folder = settings.SOURCE_FOLDER
     log.info("source folder is %s" % (source_folder))
@@ -126,6 +128,8 @@ def check_for_new_songs():
     for root, subFolders, files in os.walk(source_folder):
         for file in files:
             filename, extension = os.path.splitext(os.path.join(root,file))
+            if extension not in settings.AUTHORIZED_EXTENSIONS:
+                continue
             log.info("checking %s" % filename)
             if localdb.has_song(filename+extension):
                 log.info("skipping %s (already in local database)" % (filename))
@@ -140,38 +144,50 @@ def check_for_new_songs():
     [p.start() for p in pool]
     [p.join() for p in pool]
     
-def upload_new_songs():
+
+def upload_new_songs(convert=False):
+    log.info("uploading new songs")
     songs = localdb.select_new_songs()
-    args = '%s@%s:%s' % (settings.USER, settings.HOST, settings.DIR)
-    
     for song in songs:
         log.info('processing %s' % (song))
-        p = sub.Popen(['scp', song, args],stdout=sub.PIPE,stderr=sub.PIPE)
-        output, errors = p.communicate()
+        source_file = song
+        delete_source = False
+        if convert:
+            source_file = filetools.convert_with_ffmpeg(song)
+            delete_source = True 
+            
+        output, errors = filetools.copy_to_server(source_file)
         if len(errors) == 0:
             localdb.mark_song_as_sent(song)
         else:
             log.info(errors)
             
+        if delete_source:
+            os.remove(source_file)
     
-def main(scan=False, upload=False, clear_db=False):
+def main(scan=False, upload=False, clear_db=False, convert=False):
     localdb.build_schema()
     if clear_db:
         localdb.delete_all_songs()
     if scan:
         check_for_new_songs()
     if upload:
-        upload_new_songs()
+        upload_new_songs(convert=convert)
         
 def usage():
-    print "usage : uploader [--scan][--upload][--cleardb]"    
+    print "usage : uploader [--scan][--upload][--cleardb][--convert]"
+    print "-s --scan      : scan for new songs"    
+    print "-u --upload    : upload new songs to yasound server"    
+    print "-c --cleardb   : erase db content"    
+    print "-o --convert   : convert data to mp3 before uploading"    
 
 if __name__ == "__main__":
     scan = False
     upload = False
     clear_db = False
+    convert = False
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hsuc:v", ["help", "scan", "upload", "cleardb"])
+        opts, args = getopt.getopt(sys.argv[1:], "hsuc:v", ["help", "scan", "upload", "cleardb", "convert"])
     except getopt.GetoptError, err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
@@ -191,7 +207,9 @@ if __name__ == "__main__":
             upload = True
         elif o in ("-c", "--cleardb"):
             clear_db = True
+        elif o in ("-o", "--convert"):
+            convert = True
         else:
             assert False, "unhandled option"
         
-    main(scan=scan, upload=upload, clear_db=clear_db)
+    main(scan=scan, upload=upload, clear_db=clear_db, convert=convert)
