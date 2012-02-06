@@ -149,25 +149,29 @@ def upload_new_songs():
         p = sub.Popen(['scp', song, args],stdout=sub.PIPE,stderr=sub.PIPE)
         output, errors = p.communicate()
         if len(errors) == 0:
-            localdb.delete_song(song)
+            localdb.mark_song_as_sent(song)
         else:
             log.info(errors)
             
-def main(scan=False, upload=False):
+    
+def main(scan=False, upload=False, clear_db=False):
     localdb.build_schema()
+    if clear_db:
+        localdb.delete_all_songs()
     if scan:
         check_for_new_songs()
     if upload:
         upload_new_songs()
         
 def usage():
-    print "usage : uploader [--scan][--upload]"    
+    print "usage : uploader [--scan][--upload][--cleardb]"    
 
 if __name__ == "__main__":
     scan = False
     upload = False
+    clear_db = False
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hsu:v", ["help", "scan", "upload"])
+        opts, args = getopt.getopt(sys.argv[1:], "hsuc:v", ["help", "scan", "upload", "cleardb"])
     except getopt.GetoptError, err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
@@ -185,7 +189,9 @@ if __name__ == "__main__":
             scan = True
         elif o in ("-u", "--upload"):
             upload = True
+        elif o in ("-c", "--cleardb"):
+            clear_db = True
         else:
             assert False, "unhandled option"
         
-    main(scan=scan, upload=upload)
+    main(scan=scan, upload=upload, clear_db=clear_db)
