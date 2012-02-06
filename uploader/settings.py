@@ -2,7 +2,7 @@
 # source folder
 SOURCE_FOLDER=u'/Users/meeloo/Music/iTunes/iTunes Media/Music/'
 # type of files to be scanned
-AUTHORIZED_EXTENSIONS = ('.mp3', '.m4a', '.ogg')
+AUTHORIZED_EXTENSIONS = ('.mp3', '.m4a', '.ogg', '.aac')
 
 # binaries needed
 ECHOPRINT_CODEGEN='echoprint-codegen'
