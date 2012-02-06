@@ -4,6 +4,14 @@
 * echoprint-codegen
 * lastfmfpclient
 
+lasftmp client can be found here :
+* http://blog.last.fm/2010/07/09/fingerprint-api-and-app-updated
+
+To install echoprint-codegen :
+```
+brew install echoprint-codegen --use-clang
+```
+
 ## Installation:
 ```
 ./vtenv.sh
