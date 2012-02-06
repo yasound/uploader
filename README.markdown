@@ -5,6 +5,7 @@
 * lastfmfpclient
 
 lasftmp client can be found here :
+
 * http://blog.last.fm/2010/07/09/fingerprint-api-and-app-updated
 
 To install echoprint-codegen :
@@ -30,7 +31,7 @@ cd uploader
 
 To upload mp3 to server:
 ```
-cd DEST_FOLDER
+cd uploader
 ./upload.sh
 ```
 
