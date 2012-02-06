@@ -4,7 +4,7 @@ ECHOGEN_SERVER='http://developer.echonest.com/api/v4/song/identify?api_key=Y9DBQ
 LASTFM_APIKEY='39150a05f7f575c9da31b20c48937207'
 FUZZY_KEY='ksdjwIueudfnksx(@38*2jdnjweapnfnhshdf'
 LASTFMFPCLIENT='lastfmfpclient'
-POOL_SIZE = 1
+POOL_SIZE = 10
 SQLITE_DATABASE='/tmp/songs.dat'
 USER='yasound'
 HOST='ys-web02-vbo.alionis.net'
