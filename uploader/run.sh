@@ -1,2 +1,2 @@
 #!/bin/sh
-../vtenv/bin/python uploader.py
+../vtenv/bin/python uploader.py --scan

@@ -8,10 +8,13 @@ import logging
 import os
 import requests
 import settings
-import shutil
 import psycopg2
-from multiprocessing import Process, Array
-from multiprocessing import Pool
+import localdb
+from multiprocessing import Process
+import sys
+import getopt
+import subprocess as sub
+
 
 conn_string = "host='yasound.com' port='5433' dbname='yasound' user='yaapp' password='N3EDTnz945FSh6D'"
 
@@ -109,13 +112,13 @@ def check_if_new(file):
     return False
 
 def run(root, file, filename):
+    is_new_song = False
     if check_if_new(os.path.join(root,file)):
         log.info("%s: new file!" % (filename))
-        files_output = open(settings.DEST_FILE, 'a')
-        files_output.write("%s\n" % filename)
+        is_new_song = True
+    localdb.insert_song(filename, is_new_song=is_new_song)
 
-
-def main():
+def check_for_new_songs():
     pool = []
     source_folder = settings.SOURCE_FOLDER
     log.info("source folder is %s" % (source_folder))
@@ -124,6 +127,9 @@ def main():
         for file in files:
             filename, extension = os.path.splitext(os.path.join(root,file))
             log.info("checking %s" % filename)
+            if localdb.has_song(filename+extension):
+                log.info("skipping %s (already in local database)" % (filename))
+                continue
             p = Process(target=run, args=(root, file, filename + extension))
             pool.append(p)
             if len(pool) >= settings.POOL_SIZE:
@@ -133,7 +139,53 @@ def main():
 
     [p.start() for p in pool]
     [p.join() for p in pool]
+    
+def upload_new_songs():
+    songs = localdb.select_new_songs()
+    args = '%s@%s:%s' % (settings.USER, settings.HOST, settings.DIR)
+    
+    for song in songs:
+        log.info('processing %s' % (song))
+        p = sub.Popen(['scp', song, args],stdout=sub.PIPE,stderr=sub.PIPE)
+        output, errors = p.communicate()
+        if len(errors) == 0:
+            localdb.delete_song(song)
+        else:
+            log.info(errors)
+            
+def main(scan=False, upload=False):
+    localdb.build_schema()
+    if scan:
+        check_for_new_songs()
+    if upload:
+        upload_new_songs()
+        
+def usage():
+    print "usage : uploader [--scan][--upload]"    
 
 if __name__ == "__main__":
-    main()
-#    print check_if_new('../data/song.mp3')
+    scan = False
+    upload = False
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hsu:v", ["help", "scan", "upload"])
+    except getopt.GetoptError, err:
+        # print help information and exit:
+        print str(err) # will print something like "option -a not recognized"
+        usage()
+        sys.exit(2)
+    output = None
+    verbose = False
+    for o, a in opts:
+        if o == "-v":
+            verbose = True
+        elif o in ("-h", "--help"):
+            usage()
+            sys.exit()
+        elif o in ("-s", "--scan"):
+            scan = True
+        elif o in ("-u", "--upload"):
+            upload = True
+        else:
+            assert False, "unhandled option"
+        
+    main(scan=scan, upload=upload)
