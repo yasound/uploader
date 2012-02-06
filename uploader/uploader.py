@@ -122,7 +122,7 @@ def run(root, file, filename):
 def check_for_new_songs():
     log.info("checking for new songs")
     pool = []
-    source_folder = settings.SOURCE_FOLDER
+    source_folder = unicode(settings.SOURCE_FOLDER)
     log.info("source folder is %s" % (source_folder))
 
     for root, subFolders, files in os.walk(source_folder):

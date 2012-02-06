@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # source folder
-SOURCE_FOLDER='/Users/blondon/Music/iTunes/iTunes Media/Music/'
-
+SOURCE_FOLDER=u'/Users/blondon/Music/iTunes/iTunes Media/Music/'
 # type of files to be scanned
 AUTHORIZED_EXTENSIONS = ('.mp3', '.m4a', '.ogg')
 
