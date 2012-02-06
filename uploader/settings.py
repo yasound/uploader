@@ -16,7 +16,7 @@ FFMPEG_OPTIONS = '-ab 192000'
 POOL_SIZE = 10
 
 # local stuff
-SQLITE_DATABASE='/tmp/songs.dat'
+SQLITE_DATABASE='./songs.dat'
 
 # remote server informations
 USER='yasound'
