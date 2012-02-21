@@ -48,7 +48,7 @@ def get_file_infos(filename):
     
     if f:
         bitrate = f.info.bitrate / 1000
-        if  (bitrate < 128 and ('audio/mp4' in f._mimes)) or ('audio/x-flac' in f._mimes) or (bitrate < 128 and ('application/ogg' in f._mimes)) or (bitrate < 128 and ('audio/x-wma' in f._mimes)) or (bitrate < 192):
+        if  (bitrate < 128 and ('audio/mp4' in f._mimes)) or ('audio/x-flac' in f._mimes) or (bitrate < 128 and ('application/ogg' in f._mimes)) or (bitrate < 128 and ('audio/x-wma' in f._mimes)) or (bitrate < 128):
             log.info('%s: bitrate is too low (%d)' % (filename, bitrate))
             is_valid = False
     info = {
