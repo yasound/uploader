@@ -39,12 +39,13 @@ def get_file_infos(filename):
     bitrate = 0
 
     if f and f.tags:
-        if 'TIT2' in f.tags:
-            title = f.tags.get('TIT2')[0]
-        if 'TPE1' in f.tags:
-            artist = f.tags.get('TPE1')[0]
-        if 'TALB' in f.tags:
-            album = f.tags.get('TALB')[0]
+        if 'title' in f.tags:
+            title = f.tags.get('title')[0]
+        if 'artist' in f.tags:
+            artist = f.tags.get('artist')[0]
+        if 'album' in f.tags:
+            album = f.tags.get('album')[0]
+    
     if f:
         bitrate = f.info.bitrate / 1000
         if  (bitrate < 128 and ('audio/mp4' in f._mimes)) or ('audio/x-flac' in f._mimes) or (bitrate < 128 and ('application/ogg' in f._mimes)) or (bitrate < 128 and ('audio/x-wma' in f._mimes)) or (bitrate < 192):
