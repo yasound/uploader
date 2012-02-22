@@ -64,18 +64,20 @@ def get_file_infos(filename):
         'artistid': None,
         'fingerprint': None,
         'echonest_id': None,
+        'echonest_data': None,
         'lastfm_id': None,
+        'lastfm_data': None,
     }
     log.info('title = %s, album = %s, artist = %s' % (title, album, artist))
     echo_data = echogen.run_echogen(filename)
     if echo_data and len(echo_data) > 0:
         if 'code' in echo_data[0]:
             info['fingerprint'] = echo_data[0]['code']
-        info['echonest_id'] = echogen.get_echonest_id(echo_data[0])
+        info['echonest_id'], info['echonest_data'] = echogen.get_echonest_id(echo_data[0])
 
     lastfm_data = lastfm.run_fp(filename)
     if lastfm_data:
-        info['lastfm_id'] = lastfm.get_lastfm_id(lastfm_data)
+        info['lastfm_id'], info['lastfm_data'] = lastfm.get_lastfm_id(lastfm_data)
 
     return info
 

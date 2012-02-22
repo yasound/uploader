@@ -120,13 +120,15 @@ def get_lastfm_id(doc):
         "track": name
     }
     r = requests.get(url, params=params)
+    lastfm_data = None
     try:
         result = r.text.encode('utf-8', 'replace')
         data = xml2obj(result)
         lastfm_id = data.track.id
+        lastfm_data = data.track
     except:
         log.info("cannot parse result from lastfm call")
-    return lastfm_id
+    return lastfm_id, lastfm_data
 
 
 

@@ -29,8 +29,10 @@ def get_echonest_id(echogen_data):
     data = json.loads(r.text)
     response = data['response']
     songs = response['songs']
+    song_data = None
     if len(songs) > 0:
         song = songs[0]
         if 'id' in song:
             echonest_id = song['id']
-    return echonest_id
+            song_data = song
+    return echonest_id, song_data
