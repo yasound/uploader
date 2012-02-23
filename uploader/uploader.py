@@ -23,6 +23,12 @@ logging.basicConfig()
 log = logging.getLogger("uploader")
 log.setLevel(logging.INFO)
 
+class InfoEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if not isinstance(obj, dict):
+            return dict(obj)
+        return json.JSONEncoder.default(self, obj)
+
 def get_file_infos(filename):
     log.info("looking for file infos about %s" % (filename))
     is_valid = True
@@ -37,8 +43,7 @@ def get_file_infos(filename):
     artist = None
     album = None
     bitrate = 0
-
-    print f.tags
+    genres = []
     if f and f.tags:
         if 'title' in f.tags:
             title = f.tags.get('title')[0]
@@ -93,8 +98,7 @@ def get_file_infos(filename):
                 if 'mbid' in album_data:
                     mbid = album_data['mbid']
                     info['album_lastfm_id'] = lastfm.get_lastfm_album_id(mbid)
-                    print "lastfm_id = %s" % (info['album_lastfm_id'])
-    log.info('fullinfo: %s', info)
+    
     return info
 
 def find_fuzzy(infos):
@@ -104,7 +108,7 @@ def find_fuzzy(infos):
                'key':settings.FUZZY_KEY
     }
     headers = {'content-type': 'application/json'}
-    r = requests.post('https://dev.yasound.com/yaref/find.json/', data=json.dumps(payload), headers=headers, verify=False)
+    r = requests.post(settings.FUZZY_SERVER, data=json.dumps(payload), headers=headers, verify=False)
     if not r.status_code == 200:
         return None
     result = r.text
@@ -123,6 +127,8 @@ def check_if_new(file):
     if not db_id:
         log.info("%s: trying fuzzy" % (file))
         db_id = find_fuzzy(infos)
+
+    return True # temp
 
     if not db_id:
         log.info("%s: no db_id found" % (file))
@@ -174,12 +180,20 @@ def upload_new_songs(convert=False):
         if convert:
             source_file = filetools.convert_with_ffmpeg(song)
             delete_source = True 
-            
-        output, errors = filetools.copy_to_server(source_file)
-        if len(errors) == 0:
-            localdb.mark_song_as_sent(song)
-        else:
-            log.info(errors)
+
+        infos = get_file_infos(source_file)
+        payload = {
+            'data': json.dumps(infos, cls=InfoEncoder),
+            'key': settings.UPLOAD_KEY
+        }
+        with open(source_file) as f:
+            r = requests.post(settings.UPLOAD_URL, 
+                              files={'song': f},
+                              data=payload)
+            if r.status_code == 200:
+                localdb.mark_song_as_sent(song)
+            else:
+                log.info(r.content)
             
         if delete_source:
             os.remove(source_file)

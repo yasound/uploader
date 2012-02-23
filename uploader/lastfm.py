@@ -50,6 +50,9 @@ def xml2obj(src):
                 self._attrs[name] = value
         def __str__(self):
             return self.data or ''
+        
+        def keys(self): return self._attrs.keys()
+        
         def __repr__(self):
             items = sorted(self._attrs.items())
             if self.data:
