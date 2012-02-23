@@ -2,6 +2,7 @@
 # source folder
 import os
 SOURCE_FOLDER=u'%s/Music/iTunes/iTunes Media/Music/' % (os.path.expanduser("~"))
+
 # type of files to be scanned
 AUTHORIZED_EXTENSIONS = ('.mp3', '.m4a', '.ogg', '.aac', '.flac')
 

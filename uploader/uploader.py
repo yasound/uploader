@@ -23,12 +23,6 @@ logging.basicConfig()
 log = logging.getLogger("uploader")
 log.setLevel(logging.INFO)
 
-class InfoEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if not isinstance(obj, dict):
-            return dict(obj)
-        return json.JSONEncoder.default(self, obj)
-
 def get_file_infos(filename):
     log.info("looking for file infos about %s" % (filename))
     is_valid = True
@@ -86,7 +80,6 @@ def get_file_infos(filename):
             info['duration'] = echo_data[0]['metadata']['duration']
         if 'code' in echo_data[0]:
             info['fingerprint'] = echo_data[0]['code']
-            
         info['echonest_id'], info['echonest_data'] = echogen.get_echonest_id(echo_data[0])
 
     lastfm_data = lastfm.run_fp(filename)
@@ -98,7 +91,6 @@ def get_file_infos(filename):
                 if 'mbid' in album_data:
                     mbid = album_data['mbid']
                     info['album_lastfm_id'] = lastfm.get_lastfm_album_id(mbid)
-    
     return info
 
 def find_fuzzy(infos):
@@ -127,8 +119,6 @@ def check_if_new(file):
     if not db_id:
         log.info("%s: trying fuzzy" % (file))
         db_id = find_fuzzy(infos)
-
-    return True # temp
 
     if not db_id:
         log.info("%s: no db_id found" % (file))
@@ -183,7 +173,7 @@ def upload_new_songs(convert=False):
 
         infos = get_file_infos(source_file)
         payload = {
-            'data': json.dumps(infos, cls=InfoEncoder),
+            'data': json.dumps(infos),
             'key': settings.UPLOAD_KEY
         }
         with open(source_file) as f:
