@@ -21,7 +21,7 @@ POOL_SIZE = 10
 SQLITE_DATABASE='./songs.dat'
 
 # remote server informations
-UPLOAD_URL='http://localhost:8000/api/v1/upload_song/'
+UPLOAD_URL='https://dev.yasound.com/api/v1/upload_song/'
 UPLOAD_KEY='weeriwjwsdiwew9ei9nksxsdwxj,.29x2jdnjweapnfnhshdf'
 
 # API keys
@@ -29,4 +29,4 @@ ECHOGEN_SERVER='http://developer.echonest.com/api/v4/song/identify?api_key=Y9DBQ
 LASTFM_APIKEY='39150a05f7f575c9da31b20c48937207'
 FUZZY_KEY='ksdjwIueudfnksx(@38*2jdnjweapnfnhshdf'
 
-FUZZY_SERVER='http://localhost:8000/yaref/find.json/'
+FUZZY_SERVER='https://dev.yasound.com/yaref/find.json/'
