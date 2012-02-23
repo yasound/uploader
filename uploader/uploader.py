@@ -38,6 +38,7 @@ def get_file_infos(filename):
     album = None
     bitrate = 0
 
+    print f.tags
     if f and f.tags:
         if 'title' in f.tags:
             title = f.tags.get('title')[0]
@@ -45,6 +46,8 @@ def get_file_infos(filename):
             artist = f.tags.get('artist')[0]
         if 'album' in f.tags:
             album = f.tags.get('album')[0]
+        if 'genre' in f.tags:
+            genres = f.tags.get('genre')
     
     if f:
         bitrate = f.info.bitrate / 1000
@@ -61,14 +64,14 @@ def get_file_infos(filename):
         'year': '9999',
         'type': None,
         'status': None,
-        'albumid': None,
-        'artistid': None,
         'fingerprint': None,
         'echonest_id': None,
         'echonest_data': None,
         'echoprint_version': None,
         'lastfm_id': None,
         'lastfm_data': None,
+        'album_lastfm_id': None,
+        'genres': genres,
     }
     log.info('title = %s, album = %s, artist = %s' % (title, album, artist))
     echo_data = echogen.run_echogen(filename)
@@ -84,7 +87,13 @@ def get_file_infos(filename):
     lastfm_data = lastfm.run_fp(filename)
     if lastfm_data:
         info['lastfm_id'], info['lastfm_data'] = lastfm.get_lastfm_id(lastfm_data)
-    
+        if info['lastfm_data'] is not None:
+            if 'album' in info['lastfm_data']:
+                album_data = info['lastfm_data']['album']
+                if 'mbid' in album_data:
+                    mbid = album_data['mbid']
+                    info['album_lastfm_id'] = lastfm.get_lastfm_album_id(mbid)
+                    print "lastfm_id = %s" % (info['album_lastfm_id'])
     log.info('fullinfo: %s', info)
     return info
 
