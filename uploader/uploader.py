@@ -57,6 +57,7 @@ def get_file_infos(filename):
         'artist': artist,
         'title': title,
         'album': album,
+        'duration': 0,
         'year': '9999',
         'type': None,
         'status': None,
@@ -74,6 +75,7 @@ def get_file_infos(filename):
     if echo_data and len(echo_data) > 0:
         if 'metadata' in echo_data[0]:
             info['echoprint_version'] = echo_data[0]['metadata']['version']
+            info['duration'] = echo_data[0]['metadata']['duration']
         if 'code' in echo_data[0]:
             info['fingerprint'] = echo_data[0]['code']
             
@@ -82,7 +84,8 @@ def get_file_infos(filename):
     lastfm_data = lastfm.run_fp(filename)
     if lastfm_data:
         info['lastfm_id'], info['lastfm_data'] = lastfm.get_lastfm_id(lastfm_data)
-
+    
+    log.info('fullinfo: %s', info)
     return info
 
 def find_fuzzy(infos):
