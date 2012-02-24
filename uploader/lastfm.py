@@ -95,7 +95,7 @@ def get_lastfm_album_id(album_mbid):
     }
     r = requests.get(url, params=params)
     try:
-        result = r.text.encode('utf-8', 'replace')
+        result = r.content.encode('utf-8', 'replace')
         data = nodeToDic(parseString(result))
         lastfm_id = data['lfm']['album']['id']
     except:
@@ -122,7 +122,7 @@ def get_lastfm_id(doc):
     r = requests.get(url, params=params)
     lastfm_data = None
     try:
-        result = r.text.encode('utf-8', 'replace')
+        result = r.content.encode('utf-8', 'replace')
         data = nodeToDic(parseString(result))
         lastfm_id = data['lfm']['track']['id']
         lastfm_data = data['lfm']['track']
