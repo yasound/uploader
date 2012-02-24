@@ -4,6 +4,8 @@
 import os
 import sys
 
+import uploader
+
 try:
     from setuptools import setup
 except ImportError:
