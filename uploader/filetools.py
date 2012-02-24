@@ -20,13 +20,4 @@ def convert_with_ffmpeg(filename):
     if len(errors) == 0:
         log.info(errors)
     return dest_filename
-
-def copy_to_server(filename):
-    log.info('copying %s to server' % (filename))
-    args = '%s@%s:%s' % (settings.USER, settings.HOST, settings.DIR)
-    p = sub.Popen(['scp', filename, args],stdout=sub.PIPE,stderr=sub.PIPE)
-    output, errors = p.communicate()
-    log.info(output)
-    log.info(errors)
-    return output, errors
     
