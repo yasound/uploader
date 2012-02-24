@@ -4,8 +4,6 @@
 import os
 import sys
 
-import uploader
-
 try:
     from setuptools import setup
 except ImportError:
@@ -20,7 +18,7 @@ packages = [
 
 setup(
     name='uploader',
-    version=uploader.__version__,
+    version='0.1',
     description='Uploader for Yasound.',
     long_description=open('README.markdown').read() + '\n\n' +
                      open('HISTORY.markdown').read(),
