@@ -26,7 +26,7 @@ def get_echonest_id(echogen_data):
     r = requests.post(settings.ECHOGEN_SERVER, data=data)
     if r.status_code != 200:
         return echonest_id
-    data = json.loads(r.text)
+    data = json.loads(r.content)
     response = data['response']
     songs = response['songs']
     song_data = None
