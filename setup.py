@@ -10,7 +10,6 @@ except ImportError:
     from distutils.core import setup
 
 required = ['mutagen',
-            'psycopg2',
             'requests',]
 packages = [
     'uploader',
