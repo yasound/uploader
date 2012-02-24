@@ -12,7 +12,7 @@ LASTFMFPCLIENT='lastfmfpclient'
 FFMPEG = 'ffmpeg'
 
 # conversion parameters
-FFMPEG_OPTIONS = '-ab 192000'
+FFMPEG_OPTIONS = '-map_meta_data 0:0 -ab 192000'
 
 # multi processing
 POOL_SIZE = 10
