@@ -1,4 +1,3 @@
-from mutagen.mp3 import MP3
 import mutagen
 import db
 import echogen
