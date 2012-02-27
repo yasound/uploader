@@ -107,11 +107,14 @@ def find_fuzzy(infos):
     return data['db_id']
 
 def check_if_new(file):
+    """
+    return boolean, infos
+    """
     conn = psycopg2.connect(conn_string)
     infos = get_file_infos(file)
     if not infos['is_valid']:
         log.info('%s: invalid file' % (file))
-        return False
+        return False, infos
 
     log.debug("%s: trying echonest and lastfm" % (file))
     db_id = db.find_by_echonest_or_lastfm(conn, infos['echonest_id'], infos['lastfm_id'])
@@ -121,19 +124,50 @@ def check_if_new(file):
 
     if not db_id:
         log.info("%s: no db_id found" % (file))
-        return True
+        return True, infos
 
     log.info('%s: db_id found : %d' % (file, db_id))
-    return False
+    return False, infos
 
-def run(root, file, filename):
-    is_new_song = False
-    if check_if_new(os.path.join(root,file)):
+def upload_song(filename, convert=False, infos=None):
+    log.info('processing %s' % (filename))
+    source_file = filename
+    delete_source = False
+    if convert:
+        source_file = filetools.convert_with_ffmpeg(filename)
+        delete_source = True 
+
+    if infos is None:
+        infos = get_file_infos(source_file)
+        
+    payload = {
+        'data': json.dumps(infos),
+        'key': settings.UPLOAD_KEY
+    }
+    with open(source_file) as f:
+        r = requests.post(settings.UPLOAD_URL, 
+                          files={'song': f},
+                          data=payload)
+        if r.status_code == 200:
+            localdb.mark_song_as_sent(filename)
+        else:
+            log.info(r.content)
+        
+    if delete_source:
+        os.remove(source_file)    
+
+def run(root, file, filename, upload, convert):
+    is_new_song, infos = check_if_new(os.path.join(root,file))
+    
+    if is_new_song:
         log.info("%s: new file!" % (filename))
-        is_new_song = True
-    localdb.insert_song(filename, is_new_song=is_new_song)
 
-def check_for_new_songs():
+    localdb.insert_song(filename, is_new_song=is_new_song)
+    if upload:
+        upload_song(filename, convert, infos)
+        
+
+def check_for_new_songs(upload=False, convert=False):
     log.info("checking for new songs")
     pool = []
     source_folder = unicode(settings.SOURCE_FOLDER)
@@ -148,7 +182,7 @@ def check_for_new_songs():
             if localdb.has_song(filename+extension):
                 log.info("skipping %s (already in local database)" % (filename))
                 continue
-            p = Process(target=run, args=(root, file, filename + extension))
+            p = Process(target=run, args=(root, file, filename + extension, upload, convert))
             pool.append(p)
             if len(pool) >= settings.POOL_SIZE:
                 [p.start() for p in pool]
@@ -163,37 +197,15 @@ def upload_new_songs(convert=False):
     log.info("uploading new songs")
     songs = localdb.select_new_songs()
     for song in songs:
-        log.info('processing %s' % (song))
-        source_file = song
-        delete_source = False
-        if convert:
-            source_file = filetools.convert_with_ffmpeg(song)
-            delete_source = True 
-
-        infos = get_file_infos(source_file)
-        payload = {
-            'data': json.dumps(infos),
-            'key': settings.UPLOAD_KEY
-        }
-        with open(source_file) as f:
-            r = requests.post(settings.UPLOAD_URL, 
-                              files={'song': f},
-                              data=payload)
-            if r.status_code == 200:
-                localdb.mark_song_as_sent(song)
-            else:
-                log.info(r.content)
-            
-        if delete_source:
-            os.remove(source_file)
+        upload_song(song, convert)
     
 def main(scan=False, upload=False, clear_db=False, convert=False):
     localdb.build_schema()
     if clear_db:
         localdb.delete_all_songs()
     if scan:
-        check_for_new_songs()
-    if upload:
+        check_for_new_songs(upload, convert)
+    elif upload:
         upload_new_songs(convert=convert)
         
 def usage():
