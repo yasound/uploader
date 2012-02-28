@@ -22,7 +22,7 @@ logging.basicConfig()
 log = logging.getLogger("uploader")
 log.setLevel(logging.INFO)
 
-def get_file_infos(filename):
+def get_file_infos(filename, partial_info=None):
     log.info("looking for file infos about %s" % (filename))
     is_valid = True
     f = None
@@ -52,6 +52,7 @@ def get_file_infos(filename):
         if  (bitrate < 128 and ('audio/mp4' in f._mimes)) or ('audio/x-flac' in f._mimes) or (bitrate < 128 and ('application/ogg' in f._mimes)) or (bitrate < 128 and ('audio/x-wma' in f._mimes)) or (bitrate < 128):
             log.info('%s: bitrate is too low (%d)' % (filename, bitrate))
             is_valid = False
+            
     info = {
         'is_valid': is_valid,
         'bitrate': bitrate,
@@ -71,7 +72,13 @@ def get_file_infos(filename):
         'album_lastfm_id': None,
         'genres': genres,
     }
-    log.info('title = %s, album = %s, artist = %s' % (title, album, artist))
+    
+    # applying partial_info to info
+    if partial_info:
+        for key in partial_info.keys():
+            info[key] = partial_info.get(key)
+    
+    log.info('title: "%s", album: "%s", artist: "%s"' % (title, album, artist))
     echo_data = echogen.run_echogen(filename)
     if echo_data and len(echo_data) > 0:
         if 'metadata' in echo_data[0]:
