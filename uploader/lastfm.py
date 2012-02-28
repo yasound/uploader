@@ -127,7 +127,7 @@ def get_lastfm_id(doc):
         lastfm_id = data['lfm']['track']['id']
         lastfm_data = data['lfm']['track']
     except:
-        log.info("cannot parse result from lastfm call")
+        log.info("cannot parse result from lastfm call: %s" % (result))
     return lastfm_id, lastfm_data
 
 
