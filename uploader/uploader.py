@@ -138,6 +138,7 @@ def upload_song(filename, convert=False, infos=None):
         delete_source = True 
 
     if infos is None:
+        log.info('no metadata, looking for it')
         infos = get_file_infos(source_file)
         
     payload = {
@@ -145,12 +146,15 @@ def upload_song(filename, convert=False, infos=None):
         'key': settings.UPLOAD_KEY
     }
     with open(source_file) as f:
+        log.info('uploading song to server')
         r = requests.post(settings.UPLOAD_URL, 
                           files={'song': f},
                           data=payload)
         if r.status_code == 200:
+            log.info('success')
             localdb.mark_song_as_sent(filename)
         else:
+            log.info('failure')
             log.info(r.content)
         
     if delete_source:
