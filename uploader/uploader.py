@@ -149,7 +149,8 @@ def upload_song(filename, convert=False, infos=None):
         log.info('uploading song to server')
         r = requests.post(settings.UPLOAD_URL, 
                           files={'song': f},
-                          data=payload)
+                          data=payload,
+                          verify=False)
         if r.status_code == 200:
             log.info('success')
             localdb.mark_song_as_sent(filename)
