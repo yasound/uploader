@@ -94,12 +94,18 @@ def get_lastfm_album_id(album_mbid):
         "mbid": album_mbid,
     }
     r = requests.get(url, params=params)
+
     try:
         result = r.content.encode('utf-8')
+    except:
+        result = r.content
+
+    try:
         data = nodeToDic(parseString(result))
         lastfm_id = data['lfm']['album']['id']
+        log.info("album lastfm_id: %s" % (lastfm_id))
     except Exception, e:
-        log.info("cannot parse result from lastfm call: %s" % (result))
+        log.info("cannot parse result from lastfm call: %s" % (r.content))
         log.info("exception is: %s" % (e))
     return lastfm_id
 
@@ -122,13 +128,19 @@ def get_lastfm_id(doc):
     }
     r = requests.get(url, params=params)
     lastfm_data = None
+    
     try:
         result = r.content.encode('utf-8')
+    except:
+        result = r.content
+
+    try:
         data = nodeToDic(parseString(result))
         lastfm_id = data['lfm']['track']['id']
         lastfm_data = data['lfm']['track']
+        log.info("track lastfm_id: %s" % (lastfm_id))
     except Exception, e:
-        log.info("cannot parse result from lastfm call: %s" % (result))
+        log.info("cannot parse result from lastfm call: %s" % (r.content))
         log.info("exception is: %s" % (e))
     return lastfm_id, lastfm_data
 
