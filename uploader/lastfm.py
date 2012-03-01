@@ -114,8 +114,11 @@ def get_lastfm_id(doc):
     lastfm_id = None
     try:
         data = nodeToDic(parseString(doc))
-        name = data['lfm']['tracks']['track'][0]['name'][0]
-        artist = data['lfm']['tracks']['track'][0]['artist']['name']
+        track = data['lfm']['tracks']['track']
+        if type(track) == type([]):
+            track = track[0]
+        name = track['name'][0]
+        artist = track['artist']['name']
     except:
         log.info("cannot build document from xml description given by lastfmpclient")
         return lastfm_id, None
