@@ -4,6 +4,7 @@ import echogen
 import json
 import lastfm
 import logging
+import logging.handlers
 import os
 import requests
 import settings
@@ -18,9 +19,21 @@ import filetools
 
 conn_string = "host='yasound.com' port='5433' dbname='yasound' user='yaapp' password='N3EDTnz945FSh6D'"
 
-logging.basicConfig()
-log = logging.getLogger("uploader")
-log.setLevel(logging.INFO)
+FORMAT = '%(asctime)-15s %(message)s'
+formatter = logging.Formatter(FORMAT)
+
+log = logging.getLogger('MyLogger')
+log.setLevel(logging.DEBUG)
+file_handler = logging.handlers.RotatingFileHandler('logs/uploader.log', backupCount=50)
+file_handler.setFormatter(formatter)
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(formatter)
+log.addHandler(file_handler)
+log.addHandler(console_handler)
+
+#logging.basicConfig(format=FORMAT, filename='output.log')
+#log = logging.getLogger("uploader")
+#log.setLevel(logging.INFO)
 
 def get_file_infos(filename, partial_info=None):
     log.info("looking for file infos about %s" % (filename))
