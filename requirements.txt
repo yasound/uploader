@@ -2,3 +2,4 @@
 mutagen
 psycopg2
 requests
+watchdog

@@ -14,9 +14,10 @@ from multiprocessing import Process
 import sys
 import getopt
 import subprocess as sub
+import time
 import filetools
-
-
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 conn_string = "host='yasound.com' port='5433' dbname='yasound' user='yaapp' password='N3EDTnz945FSh6D'"
 
 FORMAT = '%(asctime)-15s %(message)s'
@@ -24,16 +25,15 @@ formatter = logging.Formatter(FORMAT)
 
 log = logging.getLogger('MyLogger')
 log.setLevel(logging.DEBUG)
-file_handler = logging.handlers.RotatingFileHandler('logs/uploader.log', backupCount=50)
-file_handler.setFormatter(formatter)
+
+#file_handler = logging.handlers.RotatingFileHandler('logs/uploader.log', backupCount=50)
+#file_handler.setFormatter(formatter)
+#log.addHandler(file_handler)
+
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(formatter)
-log.addHandler(file_handler)
 log.addHandler(console_handler)
 
-#logging.basicConfig(format=FORMAT, filename='output.log')
-#log = logging.getLogger("uploader")
-#log.setLevel(logging.INFO)
 
 def get_file_infos(filename, partial_info=None):
     log.info("looking for file infos about %s" % (filename))
@@ -182,9 +182,14 @@ def upload_song(filename, convert=False, infos=None):
         os.remove(source_file)    
 
 def run(root, file, filename, upload, convert):
+    log.info("checking %s" % filename)
+    if localdb.has_song(filename):
+        log.info("skipping %s (already in local database)" % (filename))
+        return
+    localdb.insert_song(filename, is_new_song=False)
     is_new_song, infos = check_if_new(os.path.join(root,file))
-    localdb.insert_song(filename, is_new_song=is_new_song)
     if is_new_song:
+        localdb.insert_song(filename, is_new_song=is_new_song)
         log.info("%s: new file!" % (filename))
         if upload:
             upload_song(filename, convert, infos)
@@ -201,10 +206,7 @@ def check_for_new_songs(upload=False, convert=False):
             filename, extension = os.path.splitext(os.path.join(root,file))
             if extension not in settings.AUTHORIZED_EXTENSIONS:
                 continue
-            log.info("checking %s" % filename)
-            if localdb.has_song(filename+extension):
-                log.info("skipping %s (already in local database)" % (filename))
-                continue
+
             p = Process(target=run, args=(root, file, filename + extension, upload, convert))
             pool.append(p)
             if len(pool) >= settings.POOL_SIZE:
@@ -215,6 +217,30 @@ def check_for_new_songs(upload=False, convert=False):
     [p.start() for p in pool]
     [p.join() for p in pool]
     
+class MonitorChange(FileSystemEventHandler):
+    def __init__(self, upload, convert):
+        self._upload = upload
+        self._convert = convert
+        
+    def on_any_event(self, event):
+        log.info("detecting change")
+        if event.is_directory:
+            return
+        path = event.src_path
+        try:
+            f = open(path)
+            f.close()
+        except IOError as _e:
+            return
+
+        _filename, extension = os.path.splitext(path)
+        if extension not in settings.AUTHORIZED_EXTENSIONS:
+            return
+
+        run(os.path.dirname(path), 
+            os.path.basename(path), 
+            path, self._upload, self._convert)
+        
 
 def upload_new_songs(convert=False):
     log.info("uploading new songs")
@@ -222,10 +248,26 @@ def upload_new_songs(convert=False):
     for song in songs:
         upload_song(song, convert)
     
-def main(scan=False, upload=False, clear_db=False, convert=False):
+def main(scan=False, upload=False, clear_db=False, convert=False, monitor=False):
     localdb.build_schema()
     if clear_db:
         localdb.delete_all_songs()
+        
+    if monitor:
+        log.info("monitoring %s" % (settings.SOURCE_FOLDER))
+        observer = Observer()
+        handler = MonitorChange(upload=upload, convert=convert)
+        observer.schedule(handler, path=settings.SOURCE_FOLDER, recursive=True)
+        observer.start()
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            observer.stop()
+        observer.join()
+        
+        
+        
     if scan:
         check_for_new_songs(upload, convert)
     elif upload:
@@ -243,8 +285,14 @@ if __name__ == "__main__":
     upload = False
     clear_db = False
     convert = False
+    monitor = False
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hsuc:v", ["help", "scan", "upload", "cleardb", "convert"])
+        opts, args = getopt.getopt(sys.argv[1:], "hsucm:v", ["help", 
+                                                            "scan", 
+                                                            "upload", 
+                                                            "cleardb", 
+                                                            "convert",
+                                                            "monitor"])
     except getopt.GetoptError, err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
@@ -266,7 +314,9 @@ if __name__ == "__main__":
             clear_db = True
         elif o in ("-o", "--convert"):
             convert = True
+        elif o in ("-m", "--monitor"):
+            monitor = True
         else:
             assert False, "unhandled option"
         
-    main(scan=scan, upload=upload, clear_db=clear_db, convert=convert)
+    main(scan=scan, upload=upload, clear_db=clear_db, convert=convert, monitor=monitor)
