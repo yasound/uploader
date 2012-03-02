@@ -10,7 +10,8 @@ except ImportError:
     from distutils.core import setup
 
 required = ['mutagen',
-            'requests',]
+            'requests',
+            'watchdog']
 packages = [
     'uploader',
 ]
