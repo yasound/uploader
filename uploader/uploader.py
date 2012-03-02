@@ -186,10 +186,9 @@ def run(root, file, filename, upload, convert):
     if localdb.has_song(filename):
         log.info("skipping %s (already in local database)" % (filename))
         return
-    localdb.insert_song(filename, is_new_song=False)
     is_new_song, infos = check_if_new(os.path.join(root,file))
+    localdb.insert_song(filename, is_new_song=is_new_song)
     if is_new_song:
-        localdb.insert_song(filename, is_new_song=is_new_song)
         log.info("%s: new file!" % (filename))
         if upload:
             upload_song(filename, convert, infos)
