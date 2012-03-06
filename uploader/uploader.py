@@ -95,8 +95,11 @@ def get_file_infos(filename, partial_info=None):
     echo_data = echogen.run_echogen(filename)
     if echo_data and len(echo_data) > 0:
         if 'metadata' in echo_data[0]:
-            info['echoprint_version'] = echo_data[0]['metadata']['version']
-            info['duration'] = echo_data[0]['metadata']['duration']
+            try:
+                info['echoprint_version'] = echo_data[0]['metadata']['version']
+                info['duration'] = echo_data[0]['metadata']['duration']
+            except:
+                pass
         if 'code' in echo_data[0]:
             info['fingerprint'] = echo_data[0]['code']
         info['echonest_id'], info['echonest_data'] = echogen.get_echonest_id(echo_data[0])
