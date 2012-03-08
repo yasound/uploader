@@ -1,5 +1,4 @@
 import mutagen
-import db
 import echogen
 import json
 import lastfm
@@ -8,7 +7,6 @@ import logging.handlers
 import os
 import requests
 import settings
-import psycopg2
 import localdb
 from multiprocessing import Process
 import sys
@@ -18,17 +16,12 @@ import time
 import filetools
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-conn_string = "host='yasound.com' port='5433' dbname='yasound' user='yaapp' password='N3EDTnz945FSh6D'"
 
 FORMAT = '%(asctime)-15s %(message)s'
 formatter = logging.Formatter(FORMAT)
 
 log = logging.getLogger('MyLogger')
 log.setLevel(logging.DEBUG)
-
-#file_handler = logging.handlers.RotatingFileHandler('logs/uploader.log', backupCount=50)
-#file_handler.setFormatter(formatter)
-#log.addHandler(file_handler)
 
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(formatter)
@@ -133,17 +126,13 @@ def check_if_new(file):
     """
     return boolean, infos
     """
-    conn = psycopg2.connect(conn_string)
     infos = get_file_infos(file)
     if not infos['is_valid']:
         log.info('%s: invalid file' % (file))
         return False, infos
 
-    log.debug("%s: trying echonest and lastfm" % (file))
-    db_id = db.find_by_echonest_or_lastfm(conn, infos['echonest_id'], infos['lastfm_id'])
-    if not db_id:
-        log.info("%s: trying fuzzy" % (file))
-        db_id = find_fuzzy(infos)
+    log.info("%s: trying fuzzy" % (file))
+    db_id = find_fuzzy(infos)
 
     if not db_id:
         log.info("%s: no db_id found" % (file))
