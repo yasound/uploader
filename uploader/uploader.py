@@ -182,11 +182,11 @@ def run(root, file, filename, upload, convert, radio_id=None):
         log.info("skipping %s (already in local database)" % (filename))
         return
     is_new_song, infos = check_if_new(os.path.join(root,file))
-    localdb.insert_song(filename, is_new_song=is_new_song)
     if is_new_song:
         log.info("%s: new file!" % (filename))
         if upload:
             upload_song(filename, convert, infos=infos, radio_id=radio_id)
+    localdb.insert_song(filename, is_new_song=is_new_song)
         
 
 def check_for_new_songs(upload=False, convert=False, radio_id=None):
