@@ -27,6 +27,7 @@ console_handler = logging.StreamHandler()
 console_handler.setFormatter(formatter)
 log.addHandler(console_handler)
 
+_source_folder = settings.SOURCE_FOLDER
 
 def get_file_infos(filename, partial_info=None):
     log.info("looking for file infos about %s" % (filename))
@@ -192,7 +193,7 @@ def run(root, file, filename, upload, convert, radio_id=None):
 def check_for_new_songs(upload=False, convert=False, radio_id=None):
     log.info("checking for new songs")
     pool = []
-    source_folder = unicode(settings.SOURCE_FOLDER)
+    source_folder = unicode(_source_folder)
     log.info("source folder is %s" % (source_folder))
 
     for root, subFolders, files in os.walk(source_folder):
@@ -248,10 +249,10 @@ def main(scan=False, upload=False, clear_db=False, convert=False, monitor=False,
         localdb.delete_all_songs()
         
     if monitor:
-        log.info("monitoring %s" % (settings.SOURCE_FOLDER))
+        log.info("monitoring %s" % (_source_folder))
         observer = Observer()
         handler = MonitorChange(upload=upload, convert=convert)
-        observer.schedule(handler, path=settings.SOURCE_FOLDER, recursive=True)
+        observer.schedule(handler, path=_source_folder, recursive=True)
         observer.start()
         try:
             while True:
@@ -284,13 +285,14 @@ if __name__ == "__main__":
     monitor = False
     radio_id = None
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hsucmr:v", ["help", 
+        opts, args = getopt.getopt(sys.argv[1:], "hsucmri:v", ["help", 
                                                             "scan", 
                                                             "upload", 
                                                             "cleardb", 
                                                             "convert",
                                                             "monitor",
-                                                            "radio="])
+                                                            "radio=",
+                                                            "source="])
     except getopt.GetoptError, err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
@@ -316,6 +318,8 @@ if __name__ == "__main__":
             monitor = True
         elif o in ("-r", "--radio"):
             radio_id = a
+        elif o in ("-i", "--source"):
+            _source_folder = a
         else:
             assert False, "unhandled option"
     
