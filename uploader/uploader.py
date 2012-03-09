@@ -141,7 +141,7 @@ def check_if_new(file):
     log.info('%s: db_id found : %d' % (file, db_id))
     return False, infos
 
-def upload_song(filename, convert=False, infos=None):
+def upload_song(filename, convert=False, infos=None, radio_id=None):
     log.info('processing %s' % (filename))
     source_file = filename
     delete_source = False
@@ -152,6 +152,9 @@ def upload_song(filename, convert=False, infos=None):
     if infos is None:
         log.info('no metadata, looking for it')
         infos = get_file_infos(source_file)
+        
+    if radio_id is not None:
+        infos['radio_id'] = radio_id
         
     payload = {
         'data': json.dumps(infos),
@@ -173,7 +176,7 @@ def upload_song(filename, convert=False, infos=None):
     if delete_source:
         os.remove(source_file)    
 
-def run(root, file, filename, upload, convert):
+def run(root, file, filename, upload, convert, radio_id=None):
     log.info("checking %s" % filename)
     if localdb.has_song(filename):
         log.info("skipping %s (already in local database)" % (filename))
@@ -183,10 +186,10 @@ def run(root, file, filename, upload, convert):
     if is_new_song:
         log.info("%s: new file!" % (filename))
         if upload:
-            upload_song(filename, convert, infos)
+            upload_song(filename, convert, infos=infos, radio_id=radio_id)
         
 
-def check_for_new_songs(upload=False, convert=False):
+def check_for_new_songs(upload=False, convert=False, radio_id=None):
     log.info("checking for new songs")
     pool = []
     source_folder = unicode(settings.SOURCE_FOLDER)
@@ -198,7 +201,7 @@ def check_for_new_songs(upload=False, convert=False):
             if extension not in settings.AUTHORIZED_EXTENSIONS:
                 continue
 
-            p = Process(target=run, args=(root, file, filename + extension, upload, convert))
+            p = Process(target=run, args=(root, file, filename + extension, upload, convert, radio_id))
             pool.append(p)
             if len(pool) >= settings.POOL_SIZE:
                 [p.start() for p in pool]
@@ -233,13 +236,13 @@ class MonitorChange(FileSystemEventHandler):
             path, self._upload, self._convert)
         
 
-def upload_new_songs(convert=False):
+def upload_new_songs(convert=False, radio_id=None):
     log.info("uploading new songs")
     songs = localdb.select_new_songs()
     for song in songs:
-        upload_song(song, convert)
+        upload_song(song, convert, radio_id=radio_id)
     
-def main(scan=False, upload=False, clear_db=False, convert=False, monitor=False):
+def main(scan=False, upload=False, clear_db=False, convert=False, monitor=False, radio_id=None):
     localdb.build_schema()
     if clear_db:
         localdb.delete_all_songs()
@@ -260,9 +263,9 @@ def main(scan=False, upload=False, clear_db=False, convert=False, monitor=False)
         
         
     if scan:
-        check_for_new_songs(upload, convert)
+        check_for_new_songs(upload, convert, radio_id=radio_id)
     elif upload:
-        upload_new_songs(convert=convert)
+        upload_new_songs(convert=convert, radio_id=radio_id)
         
 def usage():
     print "usage : uploader [--scan][--upload][--cleardb][--convert]"
@@ -270,6 +273,8 @@ def usage():
     print "-u --upload    : upload new songs to yasound server"    
     print "-c --cleardb   : erase db content"    
     print "-o --convert   : convert data to mp3 before uploading"    
+    print "-m --monitor   : monitor directory for change"    
+    print "-r --radio     : assign uploaded songs to given radio id"    
 
 if __name__ == "__main__":
     scan = False
@@ -277,13 +282,15 @@ if __name__ == "__main__":
     clear_db = False
     convert = False
     monitor = False
+    radio_id = None
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hsucm:v", ["help", 
+        opts, args = getopt.getopt(sys.argv[1:], "hsucmr:v", ["help", 
                                                             "scan", 
                                                             "upload", 
                                                             "cleardb", 
                                                             "convert",
-                                                            "monitor"])
+                                                            "monitor",
+                                                            "radio="])
     except getopt.GetoptError, err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
@@ -307,7 +314,14 @@ if __name__ == "__main__":
             convert = True
         elif o in ("-m", "--monitor"):
             monitor = True
+        elif o in ("-r", "--radio"):
+            radio_id = a
         else:
             assert False, "unhandled option"
-        
-    main(scan=scan, upload=upload, clear_db=clear_db, convert=convert, monitor=monitor)
+    
+    main(scan=scan, 
+         upload=upload, 
+         clear_db=clear_db, 
+         convert=convert, 
+         monitor=monitor,
+         radio_id=radio_id)
