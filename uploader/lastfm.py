@@ -148,5 +148,81 @@ def get_lastfm_id(doc):
     return lastfm_id, lastfm_data
 
 
+def find_by_name_artist(name, artist):
+    url = 'http://ws.audioscrobbler.com/2.0/'
+    params = {
+        "method": 'track.getinfo',
+        "api_key": settings.LASTFM_APIKEY,
+        "artist": artist,
+        "track": name
+    }
+    r = requests.get(url, params=params)
+    
+    try:
+        result = r.content.encode('utf-8')
+    except:
+        result = r.content
+    
+    return _parse_lastfm_content(result)
 
+def find_by_mbid(mbid):
+    url = 'http://ws.audioscrobbler.com/2.0/'
+    params = {
+        "method": 'track.getinfo',
+        "api_key": settings.LASTFM_APIKEY,
+        "mbid": mbid,
+    }
+    r = requests.get(url, params=params)
+    
+    try:
+        result = r.content.encode('utf-8')
+    except:
+        result = r.content
+    
+    return _parse_lastfm_content(result)
+
+def _get_from_data(data, key):
+    if not data:
+        return None
+
+    value = None
+    if type(data) == type([]):
+        value = data[0].get(key)
+    else:
+        value = data.get(key)
+    
+    if value and type(value) == type([]):
+        return value[0]
+    return value
+        
+
+def _parse_lastfm_content(result):
+    lastfm_id = 0
+    lastfm_name = None
+    lastfm_artist = None
+    lastfm_album = None
+    lastfm_mbid = None
+    is_valid = False
+    try:
+        data = nodeToDic(parseString(result))
+        lastfm_id = data['lfm']['track']['id']
+        lastfm_data = data['lfm']['track']
+        
+        lastfm_name =  _get_from_data(lastfm_data, 'name')
+        lastfm_mbid = _get_from_data(lastfm_data, 'mbid')
+        
+        lastfm_artist = _get_from_data(lastfm_data['artist'], 'name')
+        lastfm_album = _get_from_data(lastfm_data['album'], 'title')
+        is_valid = True
+    except Exception, _e:    
+        pass
+        
+    metadata = {
+        'id': lastfm_id,
+        'name': lastfm_name,
+        'artist': lastfm_artist,
+        'album': lastfm_album,
+        'mbid': lastfm_mbid
+    }
+    return metadata, is_valid
 
