@@ -114,6 +114,7 @@ def find_rank(fingerprintid):
     except:
         result = r.content
 
+    track = {}
     try:
         data = nodeToDic(parseString(result))
         track = data['lfm']['tracks']['track']
