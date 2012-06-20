@@ -41,7 +41,13 @@ def nodeToDic(node):
     """
     dic = {} 
     multlist = {} # holds temporary lists where there are multiple children
+    if node.attributes:
+        for key in node.attributes.keys():
+            value = node.attributes[key]
+            dic.update({key:getTextFromNode(value)})
+            
     for n in node.childNodes:
+
         multiple = False 
         if n.nodeType != n.ELEMENT_NODE:
             continue
@@ -72,6 +78,7 @@ def nodeToDic(node):
             dic.update({n.nodeName:multlist[n.nodeName]})
         else:
             dic.update({n.nodeName:text})
+            
     return dic
 
 
@@ -84,6 +91,39 @@ def run_fp(mp3):
     output, errors = p.communicate()
     
     return output
+
+def find_fingerprintid(mp3):
+    import subprocess as sub
+    p = sub.Popen([settings.LASTFMFPCLIENT, mp3, '-nometadata'],stdout=sub.PIPE,stderr=sub.PIPE)
+    output, errors = p.communicate()
+    if 'FOUND' in output:
+        res = output.split(' ')
+        return res[0]
+    return None
+
+def find_rank(fingerprintid):
+    url = 'http://ws.audioscrobbler.com/2.0/'
+    params = {
+        "method": 'track.getFingerprintMetadata',
+        "api_key": settings.LASTFM_APIKEY,
+        "fingerprintid": fingerprintid,
+    }
+    r = requests.get(url, params=params)
+    try:
+        result = r.content.encode('utf-8')
+    except:
+        result = r.content
+
+    try:
+        data = nodeToDic(parseString(result))
+        track = data['lfm']['tracks']['track']
+        if type(track) == type([]):
+            track = track[0]
+    except Exception, e:
+        log.info("cannot parse result from lastfm call: %s" % (r.content))
+        log.info("exception is: %s" % (e))
+    return track.get('rank')
+    
 
 def get_lastfm_album_id(album_mbid):
     lastfm_id = None

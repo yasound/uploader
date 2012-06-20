@@ -107,6 +107,15 @@ def get_file_infos(filename, partial_info=None):
                 if 'mbid' in album_data:
                     mbid = album_data['mbid']
                     info['album_lastfm_id'] = lastfm.get_lastfm_album_id(mbid)
+    
+    fingerprintid = lastfm.find_fingerprintid(filename)
+    if fingerprintid:
+        rank = lastfm.find_rank(fingerprintid)
+        if info['lastfm_data'] is None:
+            info['lastfm_data'] = {}
+        info['lastfm_data']['fingerprintid'] = fingerprintid
+        info['lastfm_data']['rank'] = rank
+    
     return info
 
 def find_fuzzy(infos):
