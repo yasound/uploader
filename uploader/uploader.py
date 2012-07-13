@@ -96,7 +96,10 @@ def get_file_infos(filename, partial_info=None):
                 pass
         if 'code' in echo_data[0]:
             info['fingerprint'] = echo_data[0]['code']
-        info['echonest_id'], info['echonest_data'] = echogen.get_echonest_id(echo_data[0])
+        try:
+            info['echonest_id'], info['echonest_data'] = echogen.get_echonest_id(echo_data[0])
+        except:
+            log.info('cannot find echonest id and data')
 
     lastfm_data = lastfm.run_fp(filename)
     if lastfm_data:
