@@ -108,7 +108,11 @@ def find_rank(fingerprintid):
         "api_key": settings.LASTFM_APIKEY,
         "fingerprintid": fingerprintid,
     }
-    r = requests.get(url, params=params)
+    try:
+        r = requests.get(url, params=params)
+    except:
+        return None
+    
     try:
         result = r.content.encode('utf-8')
     except:
@@ -134,7 +138,10 @@ def get_lastfm_album_id(album_mbid):
         "api_key": settings.LASTFM_APIKEY,
         "mbid": album_mbid,
     }
-    r = requests.get(url, params=params)
+    try:
+        r = requests.get(url, params=params)
+    except:
+        return None
 
     try:
         result = r.content.encode('utf-8')
@@ -153,6 +160,7 @@ def get_lastfm_album_id(album_mbid):
 def get_lastfm_id(doc):
     url = 'http://ws.audioscrobbler.com/2.0/'
     lastfm_id = None
+    lastfm_data = None
     try:
         data = nodeToDic(parseString(doc))
         track = data['lfm']['tracks']['track']
@@ -162,7 +170,7 @@ def get_lastfm_id(doc):
         artist = track['artist']['name']
     except:
         log.info("cannot build document from xml description given by lastfmpclient")
-        return lastfm_id, None
+        return lastfm_id, lastfm_data
     
     params = {
         "method": 'track.getinfo',
@@ -170,8 +178,12 @@ def get_lastfm_id(doc):
         "artist": artist,
         "track": name
     }
-    r = requests.get(url, params=params)
-    lastfm_data = None
+    
+
+    try:
+        r = requests.get(url, params=params)
+    except:
+        return lastfm_id, lastfm_data
     
     try:
         result = r.content.encode('utf-8')
@@ -197,7 +209,10 @@ def find_by_name_artist(name, artist):
         "artist": artist,
         "track": name
     }
-    r = requests.get(url, params=params)
+    try:
+        r = requests.get(url, params=params)
+    except:
+        return _parse_lastfm_content(None)
     
     try:
         result = r.content.encode('utf-8')
@@ -213,7 +228,11 @@ def find_by_mbid(mbid):
         "api_key": settings.LASTFM_APIKEY,
         "mbid": mbid,
     }
-    r = requests.get(url, params=params)
+    try:
+        r = requests.get(url, params=params)
+    except:
+        return _parse_lastfm_content(None)
+        
     
     try:
         result = r.content.encode('utf-8')
